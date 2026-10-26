@@ -1,5 +1,5 @@
 # Macro-Theory-Project-1
-Project 1_Leonard
+
 Part 1:
 
 For the purposes of this project, Colombia is an emerging country, and Ireland is the developing country of choice. Philippines is our low-income country. 
