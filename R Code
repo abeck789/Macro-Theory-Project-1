@@ -1,0 +1,402 @@
+library(readxl)
+library(dplyr)
+library(ggplot2)
+
+# Import Excel file
+data <- read_excel("Macroproject1.xlsx")
+
+which(is.na(data$GCF))
+data_complete <- na.omit(data)
+
+library(readr)
+
+
+which(is.na(data$GCF))
+data_complete <- na.omit(data)
+model <- lm(
+  GDP_pc ~ TFP + Inflation + Pop_Growth + GCF,
+  data = data_complete
+)
+
+summary(model)
+
+lm(formula = GDP_pc ~ TFP + Inflation + Pop_Growth + GCF, data = data_complete)
+
+Residuals:
+  Min     1Q Median     3Q    Max 
+-42544  -7873    120   3431  71773 
+
+Coefficients:
+  Estimate Std. Error t value Pr(>|t|)    
+(Intercept) -2.484e+04  8.721e+03  -2.848 0.004914 ** 
+  TFP          2.557e+04  7.036e+03   3.635 0.000365 ***
+  Inflation   -4.411e+02  1.552e+02  -2.842 0.005010 ** 
+  Pop_Growth   7.668e-05  6.243e-05   1.228 0.220969    
+GCF          1.845e+01  2.492e+00   7.403 5.19e-12 ***
+  ---
+  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 16710 on 177 degrees of freedom
+Multiple R-squared:  0.4263,	Adjusted R-squared:  0.4133 
+F-statistic: 32.88 on 4 and 177 DF,  p-value: < 2.2e-16
+
+data <- data %>%
+  mutate(
+    GDP_pc = parse_number(as.character(GDP_pc))
+  )
+
+# Calculate annual GDP per capita growth rate
+data <- data %>%
+  arrange(Country, YEAR) %>%
+  group_by(Country) %>%
+  mutate(
+    GDP_Growth = (GDP_pc / lag(GDP_pc) - 1) * 100
+  ) %>%
+  ungroup()
+
+OR
+
+# Compute annual GDP per capita growth rates
+data <- data %>%
+  mutate(
+    GDP_pc = parse_number(as.character(GDP_pc))
+  ) %>%
+  arrange(Country, YEAR) %>%
+  group_by(Country) %>%
+  mutate(
+    GDP_Growth = (GDP_pc / lag(GDP_pc) - 1) * 100
+  ) %>%
+  ungroup()
+
+# Display the growth rates
+growth_rates <- data %>%
+  select(Country, YEAR, GDP_pc, GDP_Growth) %>%
+  arrange(Country, YEAR)
+
+View(growth_rates)
+# View first few rows
+head(data)
+
+# Summary statistics
+summary(data$GDP_pc)
+
+summary(data$GDP_pc)
+    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+   166.7    802.2   2019.9  10620.9   6378.9 106818.9 
+
+
+#View growth rates 
+growth_rates <- data %>%
+  select(Country, YEAR, GDP_pc, GDP_Growth) %>%
+  arrange(Country, YEAR)
+
+View(growth_rates)   
+
+growth_summary <- data %>%
+  filter(!is.na(GDP_Growth), is.finite(GDP_Growth)) %>%
+  group_by(Country) %>%
+  summarise(
+    average_growth = mean(GDP_Growth),
+    growth_volatility = sd(GDP_Growth),
+    fastest_growth = max(GDP_Growth),
+    slowest_growth = min(GDP_Growth),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(average_growth))
+
+growth_summary
+
+ Country     average_growth growth_volatility fastest_growth slowest_growth
+  <chr>                <dbl>             <dbl>          <dbl>          <dbl>
+1 Ireland               8.70              9.52           34.9          -15.0
+2 Colombia              5.94             10.8            25.9          -23.7
+3 Philippines           4.96             11.2            33.8          -41.3
+
+# Create growth trajectory graph
+ggplot(data,
+aes(x = YEAR,
+y = GDP_pc,
+color = Country)) +
+geom_line(linewidth = 1) +
+labs(
+title = "Annual GDP Per Capita Growth Rates",
+x = "Year",
+y = "Growth Rate (%)",
+color = "Country"
+) +
+theme_minimal()
+
+
+#GDP per capita growth trajectories 
+ggplot(data,
+aes(x = YEAR,
+y = GDP_pc,
+color = Country)) +
+geom_smooth(se = FALSE) +
+labs(
+title = "GDP Per Capita Growth Trajectories",
+x = "Year",
+y = "Growth Rate (%)"
+) +
+theme_minimal()
+
+#Linear regression model
+data <- data %>%
+  mutate(
+    GDP_pc = parse_number(as.character(GDP_pc)),
+    GCF = parse_number(as.character(GCF))
+  )
+
+data_complete <- data %>%
+  filter(complete.cases(GDP_pc, TFP, Inflation, Pop_Growth, GCF))
+
+View(data_complete)
+
+head(data_complete)
+print(data_complete)
+
+model <- lm(
+  GDP_pc ~ TFP + Inflation + Pop_Growth + GCF,
+  data = data_complete
+)
+
+summary(model)
+
+Call:
+lm(formula = GDP_pc ~ TFP + Inflation + Pop_Growth + GCF, data = data_complete)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+-22243  -6530    350   3586  41695 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept) -1.034e+05  6.871e+03 -15.054  < 2e-16 ***
+TFP          1.074e+05  6.254e+03  17.169  < 2e-16 ***
+Inflation   -4.573e+02  9.805e+01  -4.664 6.63e-06 ***
+Pop_Growth   3.201e-05  3.874e-05   0.826     0.41    
+GCF          3.290e+01  1.727e+00  19.045  < 2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 10100 on 156 degrees of freedom
+Multiple R-squared:  0.8092,    Adjusted R-squared:  0.8043 
+F-statistic: 165.4 on 4 and 156 DF,  p-value: < 2.2e-16
+
+Results indicate that TFP, Inflation, and GCF are statistically significant predictors of GDP per capita, while Pop_Growth is not significant at the 0.05 level. 
+Inflation is negatively associated with GDP per capita, while TFP and GCF are positively associated.
+The model explains approximately 80.92% of the variance in GDP per capita (R-squared = 0.8092).
+Missing values were handled by filtering the dataset to include only complete cases for the variables of interest, which may have reduced the sample size and potentially affected the generalizability of the results.
+
+volatility <- data %>%
+  filter(!is.na(GDP_Growth), is.finite(GDP_Growth)) %>%
+  group_by(Country) %>%
+  summarise(
+    growth_volatility = sd(GDP_Growth),
+    average_growth = mean(GDP_Growth),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(growth_volatility))
+
+volatility
+
+#This ranks data by the volatility of GDP per capita growth rates, allowing for identification of countries with the most and least volatile growth patterns. The code ranks countries by the standard deviation of GDP per capita. 
+
+  Country     growth_volatility average_growth
+  <chr>                   <dbl>          <dbl>
+1 Philippines             11.2            4.96
+2 Colombia                10.8            5.94
+3 Ireland                  9.52           8.70
+
+
+#Part 3: Growth Changes in a Specific Country 
+
+# Choose Ireland and divide the data into periods
+ireland_data <- data %>%
+  filter(Country == "Ireland") %>%
+  mutate(
+    Period = case_when(
+      YEAR < 1990 ~ "Pre-1990",
+      YEAR >= 1990 & YEAR <= 2007 ~ "1990-2007",
+      YEAR >= 2008 ~ "2008 onward"
+    )
+  )
+
+# View the observations by period
+ireland_data %>%
+  select(Country, YEAR, GDP_pc, GDP_Growth, Period) %>%
+  arrange(YEAR)
+
+ireland_summary <- ireland_data %>%
+  group_by(Period) %>%
+  summarise(
+    average_GDP_growth = mean(GDP_Growth, na.rm = TRUE),
+    growth_volatility = sd(GDP_Growth, na.rm = TRUE),
+    average_GDP_pc = mean(GDP_pc, na.rm = TRUE),
+    observations = n(),
+    .groups = "drop"
+  )
+
+ireland_summary
+
+Period      average_GDP_growth growth_volatility average_GDP_pc observations
+  <chr>                    <dbl>             <dbl>          <dbl>        <int>
+1 1990-2007                10.2               8.40         29473.           18
+2 2008 onward               3.88              8.74         71206.           16
+3 Pre-1990                 10.4               9.95          3836.           30
+
+
+Part 4: Determinants of Growth
+
+# install.packages(c("WDI", "GGally"))
+
+install.packages("WDI")
+install.packages("GGally")
+library(WDI)
+library(dplyr)
+library(ggplot2)
+library(GGally)
+
+# OECD member countries
+oecd_codes <- c(
+  "AUS", "AUT", "BEL", "CAN", "CHL", "COL", "CRI", "CZE", "DNK",
+  "EST", "FIN", "FRA", "DEU", "GRC", "HUN", "ISL", "IRL", "ISR",
+  "ITA", "JPN", "KOR", "LVA", "LTU", "LUX", "MEX", "NLD", "NZL",
+  "NOR", "POL", "PRT", "SVK", "SVN", "ESP", "SWE", "CHE", "TUR",
+  "GBR", "USA"
+)
+
+# Download annual OECD data
+oecd_data <- WDI(
+  country = oecd_codes,
+  indicator = c(
+    GDP_Growth = "NY.GDP.PCAP.KD.ZG",
+    Pop_Growth = "SP.POP.GROW",
+    Investment = "NE.GDI.TOTL.ZS",
+    Human_Capital = "SE.TER.ENRR"
+  ),
+  start = 1990,
+  end = 2023,
+  extra = TRUE
+) %>%
+  filter(iso3c %in% oecd_codes) %>%
+  select(country, iso3c, year, GDP_Growth, Pop_Growth,
+         Investment, Human_Capital)
+
+# Keep observations with all variables available
+oecd_complete <- oecd_data %>%
+  filter(complete.cases(GDP_Growth, Pop_Growth,
+                        Investment, Human_Capital))
+
+# Correlation matrix
+cor_matrix <- oecd_complete %>%
+  select(GDP_Growth, Pop_Growth, Investment, Human_Capital) %>%
+  cor()
+
+round(cor_matrix, 2)
+
+round(cor_matrix, 2)
+              GDP_Growth Pop_Growth Investment Human_Capital
+GDP_Growth          1.00      -0.18       0.35          0.01
+Pop_Growth         -0.18       1.00       0.00         -0.28
+Investment          0.35       0.00       1.00          0.08
+Human_Capital       0.01      -0.28       0.08          1.00
+
+# Visualize correlations
+GGally::ggpairs(
+  oecd_complete %>%
+    select(GDP_Growth, Pop_Growth, Investment, Human_Capital)
+)
+
+
+library(tidyr)
+
+oecd_plot_data <- oecd_complete %>%
+  select(GDP_Growth, Investment, Pop_Growth, Human_Capital) %>%
+  pivot_longer(
+    cols = c(Investment, Pop_Growth, Human_Capital),
+    names_to = "Variable",
+    values_to = "Value"
+  )
+
+ggplot(oecd_plot_data, aes(x = Value, y = GDP_Growth)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE, color = "purple") +
+  facet_wrap(
+    ~ Variable,
+    scales = "free_x",
+    labeller = as_labeller(c(
+      Investment = "Investment",
+      Pop_Growth = "Population Growth",
+      Human_Capital = "Human Capital"
+    ))
+  ) +
+  labs(
+    title = "GDP Growth and Selected Variables in OECD Countries",
+    x = "Variable Value",
+    y = "GDP per Capita Growth (%)"
+  ) +
+  theme_classic()
+
+
+# Regression model
+oecd_model <- lm(
+  GDP_Growth ~ Pop_Growth + Investment + Human_Capital,
+  data = oecd_complete
+)
+
+summary(oecd_model)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-18.4615  -1.2712   0.2123   1.7684  21.3031 
+
+Coefficients:
+               Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   -3.458446   0.730970  -4.731 2.64e-06 ***
+Pop_Growth    -0.939693   0.156244  -6.014 2.76e-09 ***
+Investment     0.285728   0.026109  10.944  < 2e-16 ***
+Human_Capital -0.012400   0.005718  -2.169   0.0304 *  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 3.326 on 789 degrees of freedom
+Multiple R-squared:  0.1621,    Adjusted R-squared:  0.159 
+F-statistic:  50.9 on 3 and 789 DF,  p-value: < 2.2e-16
+
+Investment is positively associated with GDP per capita growth, while Population Growth and Human Capital are negatively associated. The model explains approximately 16.21% of the variance in GDP per capita growth (R-squared = 0.1621).
+
+
+install.packages("fixest")
+
+library(fixest)
+
+panel_model <- feols(
+  GDP_Growth ~ Pop_Growth + Investment + Human_Capital |
+    iso3c + year,
+  data = oecd_complete
+)
+
+summary(panel_model)
+
+Fixed-effects: iso3c: 38,  year: 34
+Standard-errors: IID 
+               Estimate Std. Error   t value   Pr(>|t|)    
+Pop_Growth    -1.117125   0.208328 -5.362341 1.1082e-07 ***
+Investment     0.304413   0.027989 10.876201  < 2.2e-16 ***
+Human_Capital  0.002720   0.008828  0.308131 7.5807e-01    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 2.1241     Adj. R2: 0.621678
+               Within R2: 0.156811
+
+               install.packages("broom")  # run once
+library(broom)
+
+tidy(oecd_model)
+ term          estimate std.error statistic  p.value
+  <chr>            <dbl>     <dbl>     <dbl>    <dbl>
+1 (Intercept)    -3.46     0.731       -4.73 2.64e- 6
+2 Pop_Growth     -0.940    0.156       -6.01 2.76e- 9
+3 Investment      0.286    0.0261      10.9  4.76e-26
+4 Human_Capital  -0.0124   0.00572     -2.17 3.04e- 2
